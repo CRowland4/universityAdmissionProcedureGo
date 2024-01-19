@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 )
 
 type Applicant struct {
@@ -16,7 +17,7 @@ func main() {
 	departmentCapacity := readInt()
 	applicants := getApplicants()
 	admittedApplicants := executeAdmissionsProcess(applicants, departmentCapacity)
-	printAdmitted(admittedApplicants)
+	storeAdmittedApplicants(admittedApplicants)
 	return
 }
 
@@ -65,29 +66,38 @@ func getPreference(applicant Applicant, round int) (preference string) {
 	}
 }
 
-func examScore(applicant Applicant, department string) (score float64) {
+func examScore(app Applicant, department string) (score float64) {
 	switch department {
+	case "Biotech":
+		return (app.physicsScore + app.chemistryScore) / 2.0
 	case "Physics":
-		return applicant.physicsScore
+		return (app.physicsScore + app.mathScore) / 2.0
 	case "Mathematics":
-		return applicant.mathScore
+		return app.mathScore
 	case "Engineering":
-		return applicant.csScore
+		return (app.csScore + app.mathScore) / 2.0
 	default:
-		return applicant.chemistryScore
+		return app.chemistryScore
 	}
 }
 
-func printAdmitted(apps []Applicant) {
+func storeAdmittedApplicants(apps []Applicant) {
 	apps = sortAdmittedApplicants(apps)
 	for _, dep := range [5]string{"Biotech", "Chemistry", "Engineering", "Mathematics", "Physics"} {
-		fmt.Println(dep)
-		for _, app := range apps {
-			if app.acceptedTo == dep {
-				fmt.Printf("%s %s %.1f\n", app.firstName, app.lastName, examScore(app, app.acceptedTo))
-			}
+		storeDepApplicants(dep, apps)
+	}
+
+	return
+}
+
+func storeDepApplicants(dep string, apps []Applicant) {
+	file, _ := os.Create(strings.ToLower(dep) + ".txt")
+	defer file.Close()
+
+	for _, app := range apps {
+		if app.acceptedTo == dep {
+			fmt.Fprintf(file, "%s %s %.1f\n", app.firstName, app.lastName, examScore(app, app.acceptedTo))
 		}
-		fmt.Println()
 	}
 
 	return

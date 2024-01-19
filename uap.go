@@ -1,25 +1,54 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
+
+type Applicant struct {
+	firstName string
+	lastName  string
+	gpa       float32
+}
 
 func main() {
-	exam1, exam2, exam3 := readExamScores()
-	fmt.Println(calculateAverage(exam1, exam2, exam3))
-	fmt.Println("Congratulations, you are accepted!")
+	nApplicants := readInt()
+	capacity := readInt()
+
+	applicants := getApplicants(nApplicants)
+	sort.Slice(applicants, func(i, j int) bool {
+		if applicants[i].gpa != applicants[j].gpa {
+			return applicants[i].gpa > applicants[j].gpa
+		}
+
+		return (applicants[i].firstName + applicants[i].lastName) < (applicants[j].firstName + applicants[j].lastName)
+	})
+
+	printAccepted(applicants, capacity)
+	return
+}
+
+func printAccepted(applicants []Applicant, capacity int) {
+	fmt.Println("Successful applicants:")
+	for i := 0; i < capacity; i++ {
+		fmt.Println(applicants[i].firstName, applicants[i].lastName)
+
+	}
 
 	return
 }
 
-func calculateAverage(scores ...float64) (averageScore float64) {
-	for _, score := range scores {
-		averageScore += score
+func getApplicants(nApplicants int) (applicants []Applicant) {
+	for i := 0; i < nApplicants; i++ {
+		var applicant Applicant
+		fmt.Scan(&applicant.firstName, &applicant.lastName, &applicant.gpa)
+		applicants = append(applicants, applicant)
 	}
 
-	averageScore /= float64(len(scores))
-	return averageScore
+	return applicants
 }
 
-func readExamScores() (score1, score2, score3 float64) {
-	fmt.Scan(&score1, &score2, &score3)
-	return score1, score2, score3
+func readInt() (num int) {
+	fmt.Scanln(&num)
+	return num
 }

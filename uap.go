@@ -8,16 +8,8 @@ import (
 )
 
 type Applicant struct {
-	firstName      string
-	lastName       string
-	pref1          string
-	pref2          string
-	pref3          string
-	depAccepted    string
-	physicsScore   float64
-	chemistryScore float64
-	mathScore      float64
-	csScore        float64
+	firstName, lastName, pref1, pref2, pref3, depAccepted string
+	physicsScore, chemistryScore, mathScore, csScore      float64
 }
 
 func main() {
@@ -30,42 +22,33 @@ func main() {
 }
 
 func executeAdmissionsProcess(apps []Applicant, departmentCapacity int) (admittedApplicants []Applicant) {
-	departments := map[string]int{
-		"Biotech":     0,
-		"Chemistry":   0,
-		"Engineering": 0,
-		"Mathematics": 0,
-		"Physics":     0,
-	}
+	departments := map[string]int{"Biotech": 0, "Chemistry": 0, "Engineering": 0, "Mathematics": 0, "Physics": 0}
 
 	apps = sortRound(apps, 1)
-	for i, applicant := range apps {
-		if (departments[applicant.pref1] < departmentCapacity) && (apps[i].depAccepted == "") {
-			apps[i].depAccepted = applicant.pref1
-			departments[applicant.pref1]++
-			admittedApplicants = append(admittedApplicants, apps[i])
+	for i, app := range apps {
+		if (departments[app.pref1] < departmentCapacity) && (apps[i].depAccepted == "") {
+			apps[i].depAccepted = app.pref1
+			departments[app.pref1]++
 		}
 	}
 
 	apps = sortRound(apps, 2)
-	for i, applicant := range apps {
-		if (departments[applicant.pref2] < departmentCapacity) && (apps[i].depAccepted == "") {
-			apps[i].depAccepted = applicant.pref2
-			departments[applicant.pref2]++
-			admittedApplicants = append(admittedApplicants, apps[i])
+	for i, app := range apps {
+		if (departments[app.pref2] < departmentCapacity) && (apps[i].depAccepted == "") {
+			apps[i].depAccepted = app.pref2
+			departments[app.pref2]++
 		}
 	}
 
 	apps = sortRound(apps, 3)
-	for i, applicant := range apps {
-		if (departments[applicant.pref3] < departmentCapacity) && (apps[i].depAccepted == "") {
-			apps[i].depAccepted = applicant.pref3
-			departments[applicant.pref3]++
-			admittedApplicants = append(admittedApplicants, apps[i])
+	for i, app := range apps {
+		if (departments[app.pref3] < departmentCapacity) && (apps[i].depAccepted == "") {
+			apps[i].depAccepted = app.pref3
+			departments[app.pref3]++
 		}
 	}
 
-	return admittedApplicants
+	return apps
 }
 
 func sortRound(apps []Applicant, round int) (sortedApps []Applicant) {
@@ -76,7 +59,6 @@ func sortRound(apps []Applicant, round int) (sortedApps []Applicant) {
 		if apps[i].firstName != apps[j].firstName {
 			return apps[i].firstName < apps[j].firstName
 		}
-
 		return apps[i].lastName < apps[j].lastName
 	})
 
@@ -98,18 +80,31 @@ func examScore(applicant Applicant, department string) (score float64) {
 	switch department {
 	case "Physics":
 		return applicant.physicsScore
-	case "Biotech", "Chemistry":
-		return applicant.chemistryScore
 	case "Mathematics":
 		return applicant.mathScore
 	case "Engineering":
 		return applicant.csScore
 	default:
-		return 0.0
+		return applicant.chemistryScore
 	}
 }
 
 func printAdmitted(apps []Applicant) {
+	apps = sortAdmittedApplicants(apps)
+	for _, dep := range [5]string{"Biotech", "Chemistry", "Engineering", "Mathematics", "Physics"} {
+		fmt.Println(dep)
+		for _, app := range apps {
+			if app.depAccepted == dep {
+				fmt.Printf("%s %s %.1f\n", app.firstName, app.lastName, examScore(app, app.depAccepted))
+			}
+		}
+		fmt.Println()
+	}
+
+	return
+}
+
+func sortAdmittedApplicants(apps []Applicant) (sortedApps []Applicant) {
 	sort.Slice(apps, func(i, j int) bool {
 		if apps[i].depAccepted != apps[j].depAccepted {
 			return apps[i].depAccepted < apps[j].depAccepted
@@ -120,50 +115,34 @@ func printAdmitted(apps []Applicant) {
 		if apps[i].firstName != apps[j].firstName {
 			return apps[i].firstName < apps[j].firstName
 		}
-
 		return apps[i].lastName < apps[j].lastName
 	})
 
-	for _, dep := range [5]string{"Biotech", "Chemistry", "Engineering", "Mathematics", "Physics"} {
-		fmt.Println(dep)
-		for _, applicant := range apps {
-			if applicant.depAccepted == dep {
-				fmt.Printf("%s %s %.1f\n",
-					applicant.firstName,
-					applicant.lastName,
-					examScore(applicant, applicant.depAccepted))
-			}
-		}
-		fmt.Println()
-	}
-
-	return
+	return apps
 }
 
-func getApplicants() (applicants []Applicant) {
+func getApplicants() (apps []Applicant) {
 	file, _ := os.Open("applicants.txt")
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		var newApplicant Applicant
-		line := scanner.Text()
-		fmt.Sscanf(line, "%s %s %f %f %f %f %s %s %s",
-			&newApplicant.firstName,
-			&newApplicant.lastName,
-			&newApplicant.physicsScore,
-			&newApplicant.chemistryScore,
-			&newApplicant.mathScore,
-			&newApplicant.csScore,
-			&newApplicant.pref1,
-			&newApplicant.pref2,
-			&newApplicant.pref3,
+		var app Applicant
+		fmt.Sscanf(scanner.Text(), "%s %s %f %f %f %f %s %s %s",
+			&app.firstName,
+			&app.lastName,
+			&app.physicsScore,
+			&app.chemistryScore,
+			&app.mathScore,
+			&app.csScore,
+			&app.pref1,
+			&app.pref2,
+			&app.pref3,
 		)
-
-		applicants = append(applicants, newApplicant)
+		apps = append(apps, app)
 	}
 
-	return applicants
+	return apps
 }
 
 func readInt() (num int) {

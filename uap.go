@@ -3,14 +3,15 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
 	"sort"
 	"strings"
 )
 
 type Applicant struct {
-	firstName, lastName, pref1, pref2, pref3, acceptedTo string
-	physicsScore, chemistryScore, mathScore, csScore     float64
+	firstName, lastName, pref1, pref2, pref3, acceptedTo             string
+	physicsScore, chemistryScore, mathScore, csScore, admissionScore float64
 }
 
 func main() {
@@ -43,8 +44,8 @@ func doAdmissionRound(apps []Applicant, deps map[string]int, round int) (appsNew
 
 func sortRound(apps []Applicant, round int) (sortedApps []Applicant) {
 	sort.Slice(apps, func(i, j int) bool {
-		if examScore(apps[i], getPreference(apps[i], round)) != examScore(apps[j], getPreference(apps[j], round)) {
-			return examScore(apps[i], getPreference(apps[i], round)) > examScore(apps[j], getPreference(apps[j], round))
+		if bestScore(apps[i], getPreference(apps[i], round)) != bestScore(apps[j], getPreference(apps[j], round)) {
+			return bestScore(apps[i], getPreference(apps[i], round)) > bestScore(apps[j], getPreference(apps[j], round))
 		}
 		if apps[i].firstName != apps[j].firstName {
 			return apps[i].firstName < apps[j].firstName
@@ -66,19 +67,27 @@ func getPreference(applicant Applicant, round int) (preference string) {
 	}
 }
 
-func examScore(app Applicant, department string) (score float64) {
+func bestScore(app Applicant, department string) (score float64) {
 	switch department {
 	case "Biotech":
-		return (app.physicsScore + app.chemistryScore) / 2.0
+		return math.Max(average(app.physicsScore, app.chemistryScore), app.admissionScore)
 	case "Physics":
-		return (app.physicsScore + app.mathScore) / 2.0
+		return math.Max(average(app.physicsScore, app.mathScore), app.admissionScore)
 	case "Mathematics":
-		return app.mathScore
+		return math.Max(app.mathScore, app.admissionScore)
 	case "Engineering":
-		return (app.csScore + app.mathScore) / 2.0
+		return math.Max(average(app.csScore, app.mathScore), app.admissionScore)
 	default:
-		return app.chemistryScore
+		return math.Max(app.chemistryScore, app.admissionScore)
 	}
+}
+
+func average(nums ...float64) (result float64) {
+	for _, num := range nums {
+		result += num
+	}
+	result /= float64(len(nums))
+	return result
 }
 
 func storeAdmittedApplicants(apps []Applicant) {
@@ -96,7 +105,7 @@ func storeDepApplicants(dep string, apps []Applicant) {
 
 	for _, app := range apps {
 		if app.acceptedTo == dep {
-			fmt.Fprintf(file, "%s %s %.1f\n", app.firstName, app.lastName, examScore(app, app.acceptedTo))
+			fmt.Fprintf(file, "%s %s %.1f\n", app.firstName, app.lastName, bestScore(app, app.acceptedTo))
 		}
 	}
 
@@ -108,8 +117,8 @@ func sortAdmittedApplicants(apps []Applicant) (sortedApps []Applicant) {
 		if apps[i].acceptedTo != apps[j].acceptedTo {
 			return apps[i].acceptedTo < apps[j].acceptedTo
 		}
-		if examScore(apps[i], apps[i].acceptedTo) != examScore(apps[j], apps[j].acceptedTo) {
-			return examScore(apps[i], apps[i].acceptedTo) > examScore(apps[j], apps[j].acceptedTo)
+		if bestScore(apps[i], apps[i].acceptedTo) != bestScore(apps[j], apps[j].acceptedTo) {
+			return bestScore(apps[i], apps[i].acceptedTo) > bestScore(apps[j], apps[j].acceptedTo)
 		}
 		if apps[i].firstName != apps[j].firstName {
 			return apps[i].firstName < apps[j].firstName
@@ -127,13 +136,14 @@ func getApplicants() (apps []Applicant) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		var app Applicant
-		fmt.Sscanf(scanner.Text(), "%s %s %f %f %f %f %s %s %s",
+		fmt.Sscanf(scanner.Text(), "%s %s %f %f %f %f %f %s %s %s",
 			&app.firstName,
 			&app.lastName,
 			&app.physicsScore,
 			&app.chemistryScore,
 			&app.mathScore,
 			&app.csScore,
+			&app.admissionScore,
 			&app.pref1,
 			&app.pref2,
 			&app.pref3,

@@ -8,47 +8,36 @@ import (
 )
 
 type Applicant struct {
-	firstName, lastName, pref1, pref2, pref3, depAccepted string
-	physicsScore, chemistryScore, mathScore, csScore      float64
+	firstName, lastName, pref1, pref2, pref3, acceptedTo string
+	physicsScore, chemistryScore, mathScore, csScore     float64
 }
 
 func main() {
 	departmentCapacity := readInt()
 	applicants := getApplicants()
-
 	admittedApplicants := executeAdmissionsProcess(applicants, departmentCapacity)
 	printAdmitted(admittedApplicants)
 	return
 }
 
-func executeAdmissionsProcess(apps []Applicant, departmentCapacity int) (admittedApplicants []Applicant) {
-	departments := map[string]int{"Biotech": 0, "Chemistry": 0, "Engineering": 0, "Mathematics": 0, "Physics": 0}
-
-	apps = sortRound(apps, 1)
-	for i, app := range apps {
-		if (departments[app.pref1] < departmentCapacity) && (apps[i].depAccepted == "") {
-			apps[i].depAccepted = app.pref1
-			departments[app.pref1]++
-		}
-	}
-
-	apps = sortRound(apps, 2)
-	for i, app := range apps {
-		if (departments[app.pref2] < departmentCapacity) && (apps[i].depAccepted == "") {
-			apps[i].depAccepted = app.pref2
-			departments[app.pref2]++
-		}
-	}
-
-	apps = sortRound(apps, 3)
-	for i, app := range apps {
-		if (departments[app.pref3] < departmentCapacity) && (apps[i].depAccepted == "") {
-			apps[i].depAccepted = app.pref3
-			departments[app.pref3]++
-		}
-	}
-
+func executeAdmissionsProcess(apps []Applicant, max int) (admittedApplicants []Applicant) {
+	deps := map[string]int{"Biotech": 0, "Chemistry": 0, "Engineering": 0, "Mathematics": 0, "Physics": 0, "max": max}
+	apps, deps = doAdmissionRound(apps, deps, 1)
+	apps, deps = doAdmissionRound(apps, deps, 2)
+	apps, deps = doAdmissionRound(apps, deps, 3)
 	return apps
+}
+
+func doAdmissionRound(apps []Applicant, deps map[string]int, round int) (appsNew []Applicant, depsNew map[string]int) {
+	apps = sortRound(apps, round)
+	for i, app := range apps {
+		if (deps[getPreference(app, round)] < deps["max"]) && (apps[i].acceptedTo == "") {
+			apps[i].acceptedTo = getPreference(app, round)
+			deps[getPreference(app, round)]++
+		}
+	}
+
+	return apps, deps
 }
 
 func sortRound(apps []Applicant, round int) (sortedApps []Applicant) {
@@ -94,8 +83,8 @@ func printAdmitted(apps []Applicant) {
 	for _, dep := range [5]string{"Biotech", "Chemistry", "Engineering", "Mathematics", "Physics"} {
 		fmt.Println(dep)
 		for _, app := range apps {
-			if app.depAccepted == dep {
-				fmt.Printf("%s %s %.1f\n", app.firstName, app.lastName, examScore(app, app.depAccepted))
+			if app.acceptedTo == dep {
+				fmt.Printf("%s %s %.1f\n", app.firstName, app.lastName, examScore(app, app.acceptedTo))
 			}
 		}
 		fmt.Println()
@@ -106,11 +95,11 @@ func printAdmitted(apps []Applicant) {
 
 func sortAdmittedApplicants(apps []Applicant) (sortedApps []Applicant) {
 	sort.Slice(apps, func(i, j int) bool {
-		if apps[i].depAccepted != apps[j].depAccepted {
-			return apps[i].depAccepted < apps[j].depAccepted
+		if apps[i].acceptedTo != apps[j].acceptedTo {
+			return apps[i].acceptedTo < apps[j].acceptedTo
 		}
-		if examScore(apps[i], apps[i].depAccepted) != examScore(apps[j], apps[j].depAccepted) {
-			return examScore(apps[i], apps[i].depAccepted) > examScore(apps[j], apps[j].depAccepted)
+		if examScore(apps[i], apps[i].acceptedTo) != examScore(apps[j], apps[j].acceptedTo) {
+			return examScore(apps[i], apps[i].acceptedTo) > examScore(apps[j], apps[j].acceptedTo)
 		}
 		if apps[i].firstName != apps[j].firstName {
 			return apps[i].firstName < apps[j].firstName

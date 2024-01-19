@@ -38,17 +38,7 @@ func executeAdmissionsProcess(apps []Applicant, departmentCapacity int) (admitte
 		"Physics":     0,
 	}
 
-	// Round 1
-	sort.Slice(apps, func(i, j int) bool {
-		if examScore(apps[i], apps[i].pref1) != examScore(apps[j], apps[j].pref1) {
-			return examScore(apps[i], apps[i].pref1) > examScore(apps[j], apps[j].pref1)
-		}
-		if apps[i].firstName != apps[j].firstName {
-			return apps[i].firstName < apps[j].firstName
-		}
-
-		return apps[i].lastName < apps[j].lastName
-	})
+	apps = sortRound(apps, 1)
 	for i, applicant := range apps {
 		if (departments[applicant.pref1] < departmentCapacity) && (apps[i].depAccepted == "") {
 			apps[i].depAccepted = applicant.pref1
@@ -57,17 +47,7 @@ func executeAdmissionsProcess(apps []Applicant, departmentCapacity int) (admitte
 		}
 	}
 
-	// Round 2
-	sort.Slice(apps, func(i, j int) bool {
-		if examScore(apps[i], apps[i].pref2) != examScore(apps[j], apps[j].pref2) {
-			return examScore(apps[i], apps[i].pref2) > examScore(apps[j], apps[j].pref2)
-		}
-		if apps[i].firstName != apps[j].firstName {
-			return apps[i].firstName < apps[j].firstName
-		}
-
-		return apps[i].lastName < apps[j].lastName
-	})
+	apps = sortRound(apps, 2)
 	for i, applicant := range apps {
 		if (departments[applicant.pref2] < departmentCapacity) && (apps[i].depAccepted == "") {
 			apps[i].depAccepted = applicant.pref2
@@ -76,17 +56,7 @@ func executeAdmissionsProcess(apps []Applicant, departmentCapacity int) (admitte
 		}
 	}
 
-	// Round 3
-	sort.Slice(apps, func(i, j int) bool {
-		if examScore(apps[i], apps[i].pref3) != examScore(apps[j], apps[j].pref3) {
-			return examScore(apps[i], apps[i].pref3) > examScore(apps[j], apps[j].pref3)
-		}
-		if apps[i].firstName != apps[j].firstName {
-			return apps[i].firstName < apps[j].firstName
-		}
-
-		return apps[i].lastName < apps[j].lastName
-	})
+	apps = sortRound(apps, 3)
 	for i, applicant := range apps {
 		if (departments[applicant.pref3] < departmentCapacity) && (apps[i].depAccepted == "") {
 			apps[i].depAccepted = applicant.pref3
@@ -96,6 +66,32 @@ func executeAdmissionsProcess(apps []Applicant, departmentCapacity int) (admitte
 	}
 
 	return admittedApplicants
+}
+
+func sortRound(apps []Applicant, round int) (sortedApps []Applicant) {
+	sort.Slice(apps, func(i, j int) bool {
+		if examScore(apps[i], getPreference(apps[i], round)) != examScore(apps[j], getPreference(apps[j], round)) {
+			return examScore(apps[i], getPreference(apps[i], round)) > examScore(apps[j], getPreference(apps[j], round))
+		}
+		if apps[i].firstName != apps[j].firstName {
+			return apps[i].firstName < apps[j].firstName
+		}
+
+		return apps[i].lastName < apps[j].lastName
+	})
+
+	return apps
+}
+
+func getPreference(applicant Applicant, round int) (preference string) {
+	switch round {
+	case 1:
+		return applicant.pref1
+	case 2:
+		return applicant.pref2
+	default:
+		return applicant.pref3
+	}
 }
 
 func examScore(applicant Applicant, department string) (score float64) {

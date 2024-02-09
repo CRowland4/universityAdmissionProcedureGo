@@ -96,6 +96,7 @@ func storeAdmittedApplicants(apps []Applicant) {
 		storeDepApplicants(dep, apps)
 	}
 
+	fmt.Println("Admitted applicants have been stored in one text file for each department.")
 	return
 }
 
@@ -155,6 +156,7 @@ func getApplicants() (apps []Applicant) {
 }
 
 func readInt() (num int) {
+	fmt.Println("Enter the capacity of the departments: ")
 	fmt.Scanln(&num)
 	return num
 }
